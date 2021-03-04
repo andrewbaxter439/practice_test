@@ -104,6 +104,16 @@ tests <- covid_data %>%
 library(dyn)
 library(zoo)
 
+hospital <- hosp %>% 
+  transmute(Date = ymd(Date),
+            hospitalised = NumberAdmitted)
+
+test_hosp <- tests %>% 
+  left_join(hospital, by = "Date") %>% 
+  select(Date, prop_pos, tot_tests, new_cases, hospitalised) %>% 
+  drop_na()
+
+
 hospitalised <- zoo(test_hosp$hospitalised) 
 prop_pos <- zoo(test_hosp$prop_pos) 
 
@@ -115,16 +125,6 @@ summary(mod)
 
 # What is the correlation between test positive rates of hospitalisaitons on day = d
 # and test positive rates on day = d-1?
-
-hospital <- hosp %>% 
-  transmute(Date = ymd(Date),
-            hospitalised = NumberAdmitted)
-
-test_hosp <- tests %>% 
-  left_join(hospital, by = "Date") %>% 
-  select(Date, prop_pos, tot_tests, new_cases, hospitalised) %>% 
-  drop_na()
-
 
 lagged_test <- test_hosp %>% 
   mutate(prev_test = lag(prop_pos)) 
