@@ -149,3 +149,26 @@ lagged_test %>%
   facet_wrap(~ metric, ncol = 1, scales = "free_y", strip.position = "left") +
   theme_minimal() +
   theme(legend.position = "none")
+
+# Looks like test pos rate? Make a presentation graph
+
+test_hosp %>%
+  select(Date, hospitalised, prop_pos) %>%
+  pivot_longer(-Date, names_to = "metric", values_to = "value") %>%
+  mutate(
+    metric = ifelse(
+      metric == "hospitalised",
+      "Number of hospital admissions",
+      "Proportion of tests showing +ve"
+    )
+  ) %>%
+  ggplot(aes(Date, value, fill = metric)) +
+  geom_bar(stat = "identity") +
+  facet_wrap( ~ metric,
+              ncol = 1,
+              scales = "free_y",
+              strip.position = "right") +
+  theme_minimal() +
+  scale_y_continuous("") +
+  theme(legend.position = "none",
+        text = element_text(size = 14))
