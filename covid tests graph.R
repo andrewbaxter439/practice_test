@@ -1,3 +1,6 @@
+setwd("C:/HackeR Tipz workshop file/my_proj")
+.libPaths("C:/R Packages")
+
 library(tidyverse)
 library(patchwork)
 library(lubridate)
