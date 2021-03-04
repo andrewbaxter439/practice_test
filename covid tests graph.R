@@ -3,17 +3,16 @@ library(patchwork)
 library(lubridate)
 library(httr)
 
-GET("https://www.gov.scot/binaries/content/documents/govscot/publications/statistics/2020/04/coronavirus-covid-19-trends-in-daily-data/documents/trends-in-number-of-people-in-hospital-with-confirmed-or-suspected-covid-19/trends-in-number-of-people-in-hospital-with-confirmed-or-suspected-covid-19/govscot%3Adocument/COVID-19%2BDaily%2Bdata%2B-%2BTrends%2Bin%2Bdaily%2BCOVID-19%2Bdata%2B-%2B1%2BMarch%2B2021%2B-%2B3.xlsx",
-    write_disk(ss1 <- tempfile(fileext = ".xlsx")))
 
 headers <- c("Date", "cum_person_neg", "cum_person_pos", "cum_person_tot",
              "new_cases", "new_cases_perc", "nhs_daily", "nhs_cum", "uk_daily", "uk_cum", 
              "tot_tests", "tot_pos", "pos_perc", "people_first_test_7days", "positive_cases_7days",
              "test_reported_7days", "pos_tests_7days", "pos_rate_7days", "tests_7days_per1000", "X1", "X2")
-covid_data <- readxl::read_xlsx(ss1, sheet = "Table 5 - Testing", skip = 4,
+covid_data <- readxl::read_xlsx("COVID-19+Daily+data+-+Trends+in+daily+COVID-19+data+-3+March+2021.xlsx", sheet = "Table 5 - Testing", skip = 4,
                                                col_names = headers, col_types = c("date", rep("guess", 20)))
 
 
+# What date had the minimul positive test rate?
 covid_data %>% 
   select(-X1, -X2) %>% 
   mutate(across(-Date, replace_na, 0)) %>% 
@@ -23,6 +22,7 @@ covid_data %>%
   select(Date, new_cases, tot_tests)
   
 
+# Create graphs of daily test results and numbers
 
 per_rates <- covid_data %>% 
   select(-X1, -X2) %>% 
@@ -47,15 +47,13 @@ n_tests <- covid_data %>%
   mutate(across(-Date, replace_na, 0)) %>% 
   filter(tot_tests !=0) %>% 
   mutate(perc_pos = 100*new_cases/tot_tests) %>%
-  # filter(Date >= ymd("2020-07-01") & Date < ymd("2020-08-01")) %>% 
-  # select(Date, new_cases, tot_tests, perc_pos)
   ggplot(aes(Date, tot_tests)) +
   geom_bar(stat = "identity", fill = "#ee2233") +
   ylab("Number of tests carried out")
 
 ab_rates/n_tests/per_rates
 
-
+# How did 'Eat out to help out' affect case rates?
 covid_data %>% 
   select(-X1, -X2) %>% 
   mutate(across(-Date, replace_na, 0)) %>% 
@@ -63,18 +61,20 @@ covid_data %>%
   mutate(perc_pos = 100*new_cases/tot_tests) %>%
   ggplot(aes(Date, new_cases)) +
   ylab("Number of new cases reported") +
-  SPHSUgraphs::theme_sphsu_light() +
-  coord_cartesian(ylim = c(0, 1800), expand = 0) +
-  geom_rect(aes(xmin = as.POSIXct("2020-08-03"), xmax = as.POSIXct("2020-08-31"), ymin = 0, ymax = 2000),
+  theme_minimal() +
+  coord_cartesian(ylim = c(0, NA), expand = 0) +
+  geom_rect(aes(xmin = as.POSIXct("2020-08-03"), xmax = as.POSIXct("2020-08-31"), ymin = 0, ymax = Inf),
             alpha = 0.3, fill = "#ee77dd") +
   geom_bar(stat = "identity", fill = "#33cc22") +
-  geom_text(data = tibble(), aes(x = as.POSIXct("2020-08-16"), y = 1000, label = "Eat out to help out"),
+  geom_text(data = tibble(), aes(x = as.POSIXct("2020-08-16"), y = 1500, label = "Eat out to help out"),
             colour = "#9911aa",
             fontface = "bold", angle = 90,
             vjust = 0.5,
             size = 10)
 
-hosp <- read_csv("https://www.opendata.nhs.scot/dataset/524b42b4-5c4e-4492-ba32-39dc43116710/resource/0451bc49-0eaf-49a0-aa76-7f4539e5a615/download/daily_covid_admissions_20210224.csv")
+#How did that correspond with hospital admissions?
+
+hosp <- read_csv("daily_covid_admissions_20210224.csv")
 
 hosp_rates <- hosp %>% 
   transmute(Date = ymd(Date),
@@ -95,8 +95,8 @@ tests <- covid_data %>%
   mutate(prop_pos = new_cases/tot_tests,
          Date = date(Date))
 
-# time series waste of time? ----------------------------------------------
-# This bit is to test which lag is significant
+# time series analysis ---------------------------------------------------
+# What previous day's tests best predicts current day's hospitalisations?
 
 library(dyn)
 library(zoo)
@@ -109,6 +109,9 @@ mod <- dyn$lm(hospitalised ~ prop_pos + stats::lag(prop_pos) + stats::lag(prop_p
 summary(mod)
 
 # lag -1 seems best
+
+# What is the correlation between test positive rates of hospitalisaitons on day = d
+# and test positive rates on day = d-1?
 
 hospital <- hosp %>% 
   transmute(Date = ymd(Date),
@@ -123,23 +126,21 @@ test_hosp <- tests %>%
 lagged_test <- test_hosp %>% 
   mutate(prev_test = lag(prop_pos)) 
 
-
+# Does test positive rate of number of tests best predict hospitalisations?
 
 lagged_test %>% 
   lm(hospitalised ~ prev_test, data = .) %>% 
   summary()
 
 lagged_test %>% 
-  lm(hospitalised ~ prev_test + tot_tests, data = .) %>% 
+  lm(hospitalised ~ tot_tests, data = .) %>% 
   summary()
 
-
-
+# Visualise across all metrics - which best predicts hospitalisations?
 
 lagged_test %>% 
   select(-prev_test) %>%
   pivot_longer(-Date, names_to = "metric", values_to = "value") %>% 
-  # mutate(metric = ifelse(metric == "hospitalised", "Number of hospital admissions", "Proportion of tests showing +ve")) %>% 
   ggplot(aes(Date, value, fill = metric)) +
   geom_bar(stat = "identity") +
   facet_wrap(~ metric, ncol = 1, scales = "free_y", strip.position = "left") +
