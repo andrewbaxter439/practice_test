@@ -29,8 +29,6 @@ per_rates <- covid_data %>%
   mutate(across(-Date, replace_na, 0)) %>% 
   filter(tot_tests !=0) %>% 
   mutate(perc_pos = 100*new_cases/tot_tests) %>%
-  # filter(Date >= ymd("2020-07-01") & Date < ymd("2020-08-01")) %>% 
-  # select(Date, new_cases, tot_tests, perc_pos)
   ggplot(aes(Date, perc_pos)) +
   geom_bar(stat = "identity", fill = "#004499") +
   ylab("Percentage of tests reporting +ve")
