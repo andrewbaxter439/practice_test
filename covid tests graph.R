@@ -49,7 +49,7 @@ covid_data %>%
 
 #How did that correspond with hospital admissions?
 
-hosp <- read_csv("daily_covid_admissions_20210224.csv")
+load("data/hosp.rda")
 
 hosp_rates <- hosp %>% 
   transmute(Date = ymd(Date),
