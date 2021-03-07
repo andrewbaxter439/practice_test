@@ -8,7 +8,7 @@ headers <- c("Date", "cum_person_neg", "cum_person_pos", "cum_person_tot",
              "test_reported_7days", "pos_tests_7days", "pos_rate_7days", "tests_7days_per1000", "X1", "X2")
 
 covid_data <- readxl::read_xlsx(
-  "data/COVID-19+Daily+data+-+Trends+in+daily+COVID-19+data+-3+March+2021.xlsx",
+  "data-raw/COVID-19+Daily+data+-+Trends+in+daily+COVID-19+data+-3+March+2021.xlsx",
   sheet = "Table 5 - Testing",
   skip = 4,
   col_names = headers,
