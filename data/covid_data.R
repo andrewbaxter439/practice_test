@@ -9,6 +9,10 @@ covid_data <- readxl::read_xlsx(
   skip = 4,
   col_names = headers,
   col_types = c("date", rep("guess", 20))
-)
+) %>%
+  select(-X1, -X2) %>%
+  mutate(across(-Date, replace_na, 0)) %>%
+  filter(tot_tests != 0)
+
 
 save(covid_data, file = "data/covid_data.rda")

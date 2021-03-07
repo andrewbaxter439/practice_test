@@ -8,10 +8,7 @@ load("data/covid_data.rda")
 
 
 # What date had the minimul positive test rate?
-covid_data %>% 
-  select(-X1, -X2) %>% 
-  mutate(across(-Date, replace_na, 0)) %>% 
-  filter(tot_tests !=0) %>% 
+covid_data %>%
   mutate(perc_pos = new_cases/tot_tests) %>%
   filter(perc_pos == min(perc_pos)) %>% 
   select(Date, new_cases, tot_tests)
@@ -20,27 +17,18 @@ covid_data %>%
 # Create graphs of daily test results and numbers
 
 per_rates <- covid_data %>% 
-  select(-X1, -X2) %>% 
-  mutate(across(-Date, replace_na, 0)) %>% 
-  filter(tot_tests !=0) %>% 
   mutate(perc_pos = 100*new_cases/tot_tests) %>%
   ggplot(aes(Date, perc_pos)) +
   geom_bar(stat = "identity", fill = "#004499") +
   ylab("Percentage of tests reporting +ve")
 
 ab_rates <- covid_data %>% 
-  select(-X1, -X2) %>% 
-  mutate(across(-Date, replace_na, 0)) %>% 
-  filter(tot_tests !=0) %>% 
   mutate(perc_pos = 100*new_cases/tot_tests) %>%
   ggplot(aes(Date, new_cases)) +
   geom_bar(stat = "identity", fill = "#33cc22") +
   ylab("Number of new cases reported")
 
 n_tests <- covid_data %>% 
-  select(-X1, -X2) %>% 
-  mutate(across(-Date, replace_na, 0)) %>% 
-  filter(tot_tests !=0) %>% 
   mutate(perc_pos = 100*new_cases/tot_tests) %>%
   ggplot(aes(Date, tot_tests)) +
   geom_bar(stat = "identity", fill = "#ee2233") +
@@ -50,9 +38,6 @@ ab_rates/n_tests/per_rates
 
 # How did 'Eat out to help out' affect case rates?
 covid_data %>% 
-  select(-X1, -X2) %>% 
-  mutate(across(-Date, replace_na, 0)) %>% 
-  filter(tot_tests !=0) %>% 
   mutate(perc_pos = 100*new_cases/tot_tests) %>%
   ggplot(aes(Date, new_cases)) +
   ylab("Number of new cases reported") +
@@ -84,9 +69,6 @@ hosp_rates <- hosp %>%
 
 
 tests <- covid_data %>% 
-  select(-X1, -X2) %>% 
-  mutate(across(-Date, replace_na, 0)) %>% 
-  filter(tot_tests !=0) %>% 
   mutate(prop_pos = new_cases/tot_tests,
          Date = date(Date))
 
