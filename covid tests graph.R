@@ -2,9 +2,11 @@ library(tidyverse)
 library(patchwork)
 library(lubridate)
 library(httr)
-
+library(dyn)
+library(zoo)
 
 load("data/covid_data.rda")
+load("data/hosp.rda")
 
 
 # What date had the minimul positive test rate?
@@ -49,8 +51,6 @@ covid_data %>%
 
 #How did that correspond with hospital admissions?
 
-load("data/hosp.rda")
-
 hosp_rates <- hosp %>% 
   transmute(Date = ymd(Date),
             Hosp = NumberAdmitted) %>% 
@@ -68,16 +68,9 @@ hosp_rates <- hosp %>%
 # time series analysis ---------------------------------------------------
 # What previous day's tests best predicts current day's hospitalisations?
 
-library(dyn)
-library(zoo)
-
-hospital <- hosp %>% 
-  transmute(Date = ymd(Date),
-            hospitalised = NumberAdmitted)
-
-test_hosp <- covid_data %>% 
-  left_join(hospital, by = "Date") %>% 
-  select(Date, prop_pos, tot_tests, new_cases, hospitalised) %>% 
+test_hosp <- covid_data %>%
+  left_join(hosp, by = "Date") %>% 
+  select(Date, prop_pos, tot_tests, new_cases, hospitalised = NumberAdmitted) %>% 
   drop_na()
 
 
