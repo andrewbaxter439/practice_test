@@ -1,3 +1,10 @@
+---
+title: COVID test graphs
+author: Andrew Baxter
+output_format: html_document
+---
+
+```{r setup, include=FALSE}
 library(tidyverse)
 library(patchwork)
 library(lubridate)
@@ -7,15 +14,18 @@ library(zoo)
 load("data/covid_data.rda")
 load("data/hospitalisations.rda")
 load("data/tests_and_hospitalisations.rda")
+```
 
-# What date had the minimul positive test rate?
-covid_data %>%
+```{r include=FALSE}
+minimal_test_date <- covid_data %>%
   filter(perc_pos == min(perc_pos)) %>%
-  select(Date, new_cases, tot_tests)
+  select(Date, new_cases, tot_tests) %>%
+  pull(Date)
+```
 
+What date had the minimal positive test rate? Well, it was `r minimal_test_date`.
 
-# Create graphs of daily test results and numbers
-
+```{r echo=FALSE, fig.cap="Graphs of daily test results and numbers."}
 per_rates <- covid_data %>% 
   ggplot(aes(Date, perc_pos)) +
   geom_bar(stat = "identity", fill = "#004499") +
@@ -32,11 +42,15 @@ n_tests <- covid_data %>%
   ylab("Number of tests carried out")
 
 ab_rates/n_tests/per_rates
+```
 
-# How did 'Eat out to help out' affect case rates?
+How did 'Eat out to help out' affect case rates?
+
+```{r echo=FALSE}
 covid_data %>% 
-  ggplot(aes(Date, new_cases)) +
+  ggplot(aes(as.POSIXct(Date), new_cases)) +
   ylab("Number of new cases reported") +
+  xlab("Date") +
   theme_minimal() +
   coord_cartesian(ylim = c(0, NA), expand = 0) +
   geom_rect(aes(xmin = as.POSIXct("2020-08-03"), xmax = as.POSIXct("2020-08-31"), ymin = 0, ymax = Inf),
@@ -47,9 +61,11 @@ covid_data %>%
             fontface = "bold", angle = 90,
             vjust = 0.5,
             size = 10)
+```
 
-#How did that correspond with hospital admissions?
+How did that correspond with hospital admissions?
 
+```{r echo=FALSE}
 hosp_rates <- hospitalisations %>% 
   transmute(Date = ymd(Date),
             Hosp = NumberAdmitted) %>% 
@@ -58,29 +74,29 @@ hosp_rates <- hospitalisations %>%
   ylab("Hospitalisations") +
   xlim(ymd("2020-04-01"), NA)
 
-
 (ab_rates/n_tests/per_rates/hosp_rates)
+```
 
+# Time series analysis
 
+What previous day's tests best predicts current day's hospitalisations?
 
-
-# time series analysis ---------------------------------------------------
-# What previous day's tests best predicts current day's hospitalisations?
-
+```{r echo=FALSE}
 hospitalised <- zoo(tests_and_hospitalisations$hospitalised) 
 prop_pos <- zoo(tests_and_hospitalisations$prop_pos) 
 
 mod <- dyn$lm(hospitalised ~ prop_pos + stats::lag(prop_pos) + stats::lag(prop_pos, -1) + stats::lag(prop_pos, -2))
 
 summary(mod)
+```
 
-# lag -1 seems best
+Lag -1 seems best.
 
-# What is the correlation between test positive rates of hospitalisaitons on day = d
-# and test positive rates on day = d-1?
+What is the correlation between test positive rates of hospitalisaitons on day = d and test positive rates on day = d-1?
 
-# Does test positive rate of number of tests best predict hospitalisations?
+Does test positive rate of number of tests best predict hospitalisations?
 
+```{r echo=FALSE}
 tests_and_hospitalisations %>% 
   lm(hospitalised ~ prev_test, data = .) %>% 
   summary()
@@ -88,9 +104,11 @@ tests_and_hospitalisations %>%
 tests_and_hospitalisations %>% 
   lm(hospitalised ~ tot_tests, data = .) %>% 
   summary()
+```
 
-# Visualise across all metrics - which best predicts hospitalisations?
+Visualise across all metrics - which best predicts hospitalisations?
 
+```{r echo=FALSE}
 tests_and_hospitalisations %>% 
   select(-prev_test) %>%
   pivot_longer(-Date, names_to = "metric", values_to = "value") %>% 
@@ -99,9 +117,11 @@ tests_and_hospitalisations %>%
   facet_wrap(~ metric, ncol = 1, scales = "free_y", strip.position = "left") +
   theme_minimal() +
   theme(legend.position = "none")
+```
 
-# Looks like test pos rate? Make a presentation graph
+Looks like test pos rate? Make a presentation graph.
 
+```{r echo=FALSE}
 tests_and_hospitalisations %>%
   select(Date, hospitalised, prop_pos) %>%
   pivot_longer(-Date, names_to = "metric", values_to = "value") %>%
@@ -122,3 +142,4 @@ tests_and_hospitalisations %>%
   scale_y_continuous("") +
   theme(legend.position = "none",
         text = element_text(size = 14))
+```
