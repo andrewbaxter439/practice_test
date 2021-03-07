@@ -6,7 +6,7 @@ library(dyn)
 library(zoo)
 
 load("data/covid_data.rda")
-load("data/hosp.rda")
+load("data/hospitalisations.rda")
 
 
 # What date had the minimul positive test rate?
@@ -51,7 +51,7 @@ covid_data %>%
 
 #How did that correspond with hospital admissions?
 
-hosp_rates <- hosp %>% 
+hosp_rates <- hospitalisations %>% 
   transmute(Date = ymd(Date),
             Hosp = NumberAdmitted) %>% 
   ggplot(aes(Date, Hosp)) +
@@ -69,7 +69,7 @@ hosp_rates <- hosp %>%
 # What previous day's tests best predicts current day's hospitalisations?
 
 test_hosp <- covid_data %>%
-  left_join(hosp, by = "Date") %>% 
+  left_join(hospitalisations, by = "Date") %>% 
   select(Date, prop_pos, tot_tests, new_cases, hospitalised = NumberAdmitted) %>% 
   drop_na()
 
