@@ -63,8 +63,7 @@ hosp_rates <- hosp %>%
 (ab_rates/n_tests/per_rates/hosp_rates)
 
 
-tests <- covid_data %>% 
-  mutate(Date = date(Date))
+
 
 # time series analysis ---------------------------------------------------
 # What previous day's tests best predicts current day's hospitalisations?
@@ -76,7 +75,7 @@ hospital <- hosp %>%
   transmute(Date = ymd(Date),
             hospitalised = NumberAdmitted)
 
-test_hosp <- tests %>% 
+test_hosp <- covid_data %>% 
   left_join(hospital, by = "Date") %>% 
   select(Date, prop_pos, tot_tests, new_cases, hospitalised) %>% 
   drop_na()

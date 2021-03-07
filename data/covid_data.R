@@ -1,3 +1,7 @@
+library(dplyr)
+library(tidyr)
+library(lubridate)
+
 headers <- c("Date", "cum_person_neg", "cum_person_pos", "cum_person_tot",
              "new_cases", "new_cases_perc", "nhs_daily", "nhs_cum", "uk_daily", "uk_cum", 
              "tot_tests", "tot_pos", "pos_perc", "people_first_test_7days", "positive_cases_7days",
@@ -15,8 +19,8 @@ covid_data <- readxl::read_xlsx(
   filter(tot_tests != 0) %>%
   mutate(
     prop_pos = new_cases/tot_tests,
-    perc_pos = 100*new_cases/tot_tests
+    perc_pos = 100*new_cases/tot_tests,
+    Date = date(Date)
   )
-
 
 save(covid_data, file = "data/covid_data.rda")
