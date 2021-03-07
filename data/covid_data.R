@@ -12,7 +12,11 @@ covid_data <- readxl::read_xlsx(
 ) %>%
   select(-X1, -X2) %>%
   mutate(across(-Date, replace_na, 0)) %>%
-  filter(tot_tests != 0)
+  filter(tot_tests != 0) %>%
+  mutate(
+    prop_pos = new_cases/tot_tests,
+    perc_pos = 100*new_cases/tot_tests
+  )
 
 
 save(covid_data, file = "data/covid_data.rda")
