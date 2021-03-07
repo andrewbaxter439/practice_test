@@ -1,13 +1,12 @@
 library(tidyverse)
 library(patchwork)
 library(lubridate)
-library(httr)
 library(dyn)
 library(zoo)
 
 load("data/covid_data.rda")
 load("data/hospitalisations.rda")
-
+load("data/tests_and_hospitalisations.rda")
 
 # What date had the minimul positive test rate?
 covid_data %>%
@@ -68,14 +67,8 @@ hosp_rates <- hospitalisations %>%
 # time series analysis ---------------------------------------------------
 # What previous day's tests best predicts current day's hospitalisations?
 
-test_hosp <- covid_data %>%
-  left_join(hospitalisations, by = "Date") %>% 
-  select(Date, prop_pos, tot_tests, new_cases, hospitalised = NumberAdmitted) %>% 
-  drop_na()
-
-
-hospitalised <- zoo(test_hosp$hospitalised) 
-prop_pos <- zoo(test_hosp$prop_pos) 
+hospitalised <- zoo(tests_and_hospitalisations$hospitalised) 
+prop_pos <- zoo(tests_and_hospitalisations$prop_pos) 
 
 mod <- dyn$lm(hospitalised ~ prop_pos + stats::lag(prop_pos) + stats::lag(prop_pos, -1) + stats::lag(prop_pos, -2))
 
@@ -86,22 +79,19 @@ summary(mod)
 # What is the correlation between test positive rates of hospitalisaitons on day = d
 # and test positive rates on day = d-1?
 
-lagged_test <- test_hosp %>% 
-  mutate(prev_test = lag(prop_pos)) 
-
 # Does test positive rate of number of tests best predict hospitalisations?
 
-lagged_test %>% 
+tests_and_hospitalisations %>% 
   lm(hospitalised ~ prev_test, data = .) %>% 
   summary()
 
-lagged_test %>% 
+tests_and_hospitalisations %>% 
   lm(hospitalised ~ tot_tests, data = .) %>% 
   summary()
 
 # Visualise across all metrics - which best predicts hospitalisations?
 
-lagged_test %>% 
+tests_and_hospitalisations %>% 
   select(-prev_test) %>%
   pivot_longer(-Date, names_to = "metric", values_to = "value") %>% 
   ggplot(aes(Date, value, fill = metric)) +
@@ -112,7 +102,7 @@ lagged_test %>%
 
 # Looks like test pos rate? Make a presentation graph
 
-test_hosp %>%
+tests_and_hospitalisations %>%
   select(Date, hospitalised, prop_pos) %>%
   pivot_longer(-Date, names_to = "metric", values_to = "value") %>%
   mutate(
